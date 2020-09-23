@@ -1,0 +1,17 @@
+{
+    "rowsPath": "//item",
+    "columns": [
+        {
+            "header": "title",
+            "valuePath": "/title"
+        },
+        {
+            "header": "link",
+            "valuePath": "/link"
+        },
+        {
+            "header": "description",
+            "valuePath": "/description"
+        }
+    ]
+}
