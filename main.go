@@ -34,10 +34,12 @@ func main() {
 	var xmlPath string
 	var mappingPath string
 	var csvPath string
+	var withBom bool
 
 	flag.StringVar(&xmlPath, "i", "", "XML input file path or directory")
 	flag.StringVar(&mappingPath, "m", "", "XML to CSV mapping file path")
 	flag.StringVar(&csvPath, "o", "", "CSV output file path")
+	flag.BoolVar(&withBom, "bom", false, "CSV with BOM")
 	flag.Parse()
 
 	if xmlPath == "" || mappingPath == "" || csvPath == "" {
@@ -53,6 +55,11 @@ func main() {
 	defer csvFile.Close()
 
 	xmlPaths := findXML(xmlPath)
+
+	if withBom {
+		// BOMを付与
+		csvFile.Write([]byte{0xEF, 0xBB, 0xBF})
+	}
 
 	convert(xmlPaths, mapping, csvFile)
 }
