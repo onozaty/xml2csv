@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"sort"
 
 	"github.com/antchfx/xmlquery"
 )
@@ -47,7 +49,9 @@ func main() {
 	}
 	defer csvFile.Close()
 
-	convert([]string{xmlPath}, mapping, csvFile)
+	xmlPaths := findXML(xmlPath)
+
+	convert(xmlPaths, mapping, csvFile)
 }
 
 func convert(xmlPaths []string, mapping Mapping, writer io.Writer) {
@@ -67,7 +71,7 @@ func convert(xmlPaths []string, mapping Mapping, writer io.Writer) {
 
 	// rows
 	for _, xmlPath := range xmlPaths {
-		doc := loadXML(xmlPath)
+		doc := parseXML(xmlPath)
 		convertOne(doc, mapping, csvWriter)
 	}
 
@@ -121,7 +125,7 @@ func loadMapping(path string) Mapping {
 	return mapping
 }
 
-func loadXML(path string) *xmlquery.Node {
+func parseXML(path string) *xmlquery.Node {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -135,4 +139,33 @@ func loadXML(path string) *xmlquery.Node {
 	}
 
 	return doc
+}
+
+func findXML(path string) []string {
+
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !fileInfo.IsDir() {
+		// ファイル
+		return []string{path}
+	}
+
+	// ディレクトリの場合、配下のファイルを取得
+	fileInfosInDir, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var files []string
+	for _, fileInfoInDir := range fileInfosInDir {
+		if !fileInfoInDir.IsDir() {
+			files = append(files, filepath.Join(path, fileInfoInDir.Name()))
+		}
+	}
+
+	sort.Strings(files)
+	return files
 }

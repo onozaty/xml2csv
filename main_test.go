@@ -99,7 +99,43 @@ func TestLoadMapping(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(result.Columns, expect.Columns) {
+	if !reflect.DeepEqual(result, expect) {
+		t.Fatalf("failed test\n%s", result)
+	}
+}
+
+func TestFindXML_Dir(t *testing.T) {
+
+	result := findXML("testdata/junit")
+
+	expect := []string{
+		"testdata\\junit\\TestCase1.xml",
+		"testdata\\junit\\TestCase2.xml",
+	}
+
+	if !reflect.DeepEqual(result, expect) {
+		t.Fatalf("failed test\n%s", result)
+	}
+}
+
+func TestFindXML_Dir_Nest(t *testing.T) {
+
+	result := findXML("testdata")
+
+	expect := []string{"testdata\\rss.xml"}
+
+	if !reflect.DeepEqual(result, expect) {
+		t.Fatalf("failed test\n%s", result)
+	}
+}
+
+func TestFindXML_File(t *testing.T) {
+
+	result := findXML("testdata/rss.xml")
+
+	expect := []string{"testdata/rss.xml"}
+
+	if !reflect.DeepEqual(result, expect) {
 		t.Fatalf("failed test\n%s", result)
 	}
 }
