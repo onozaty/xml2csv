@@ -68,6 +68,7 @@ func TestConvertOne(t *testing.T) {
 			Column{Header: "id", ValuePath: "/@id"},
 			Column{Header: "name", ValuePath: "/name"},
 			Column{Header: "value", ValuePath: "/value"},
+			Column{Header: "has value", ValuePath: "boolean(/value)", UseEvaluate: true},
 		},
 	}
 
@@ -77,9 +78,9 @@ func TestConvertOne(t *testing.T) {
 
 	result := string(b.Bytes())
 
-	expect := "1,name1,value1\n" +
-		"2,name2,\"value2,xx\"\n" +
-		"3,name3,\n"
+	expect := "1,name1,value1,true\n" +
+		"2,name2,\"value2,xx\",true\n" +
+		"3,name3,,false\n"
 
 	if result != expect {
 		t.Fatalf("failed test\n%s", result)
@@ -100,7 +101,7 @@ func TestLoadMapping(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expect) {
-		t.Fatalf("failed test\n%s", result)
+		t.Fatalf("failed test\n%+v", result)
 	}
 }
 

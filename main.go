@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,12 +13,14 @@ import (
 	"sort"
 
 	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
 )
 
 // Column カラムの定義
 type Column struct {
-	Header    string `json:"header"`
-	ValuePath string `json:"valuePath"`
+	Header      string `json:"header"`
+	ValuePath   string `json:"valuePath"`
+	UseEvaluate bool   `json:"useEvaluate"`
 }
 
 // Mapping マッピング情報
@@ -89,17 +92,8 @@ func convertOne(doc *xmlquery.Node, mapping Mapping, csvWriter *csv.Writer) {
 
 		var values []string
 		for _, column := range mapping.Columns {
-
-			value, err := xmlquery.Query(row, column.ValuePath)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if value != nil {
-				values = append(values, value.InnerText())
-			} else {
-				values = append(values, "")
-			}
+			value := getValue(row, column.ValuePath, column.UseEvaluate)
+			values = append(values, value)
 		}
 
 		err := csvWriter.Write(values)
@@ -107,6 +101,32 @@ func convertOne(doc *xmlquery.Node, mapping Mapping, csvWriter *csv.Writer) {
 			log.Fatal(err)
 		}
 	}
+}
+
+func getValue(row *xmlquery.Node, valuePath string, useEvaluate bool) string {
+
+	// Node以外を返すような式の場合(count()、boolean()など)
+	if useEvaluate {
+		expr, err := xpath.Compile(valuePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		value := expr.Evaluate(xmlquery.CreateXPathNavigator(row))
+		return fmt.Sprint(value)
+	}
+
+	// Nodeを返す場合
+	value, err := xmlquery.Query(row, valuePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if value == nil {
+		return ""
+	}
+
+	return value.InnerText()
 }
 
 func loadMapping(path string) Mapping {
