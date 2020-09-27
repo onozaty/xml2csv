@@ -1,0 +1,37 @@
+{
+    "rowsPath": "//testcase",
+    "columns": [
+        {
+            "header": "classname",
+            "valuePath": "/@classname"
+        },
+        {
+            "header": "name",
+            "valuePath": "/@name"
+        },
+        {
+            "header": "time",
+            "valuePath": "/@time"
+        },
+        {
+            "header": "success",
+            "valuePath": "not(/*)",
+            "useEvaluate": true
+        },
+        {
+            "header": "skipped",
+            "valuePath": "boolean(/skipped)",
+            "useEvaluate": true
+        },
+        {
+            "header": "failure",
+            "valuePath": "boolean(/failure)",
+            "useEvaluate": true
+        },
+        {
+            "header": "error",
+            "valuePath": "boolean(/error)",
+            "useEvaluate": true
+        }
+    ]
+}
