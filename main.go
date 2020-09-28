@@ -44,6 +44,7 @@ func main() {
 
 	if xmlPath == "" || mappingPath == "" || csvPath == "" {
 		flag.Usage()
+		os.Exit(1)
 	}
 
 	mapping := loadMapping(mappingPath)
