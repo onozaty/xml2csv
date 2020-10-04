@@ -64,7 +64,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	mapping := loadMapping(mappingPath)
+	mapping, err := loadMapping(mappingPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	csvFile, err := os.Create(csvPath)
 	if err != nil {
@@ -72,17 +75,23 @@ func main() {
 	}
 	defer csvFile.Close()
 
-	xmlPaths := findXML(xmlPath)
+	xmlPaths, err := findXML(xmlPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if withBom {
 		// BOMを付与
 		csvFile.Write([]byte{0xEF, 0xBB, 0xBF})
 	}
 
-	convert(xmlPaths, mapping, csvFile)
+	err = convert(xmlPaths, mapping, csvFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func convert(xmlPaths []string, mapping Mapping, writer io.Writer) {
+func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
 
 	csvWriter := csv.NewWriter(writer)
 
@@ -94,114 +103,128 @@ func convert(xmlPaths []string, mapping Mapping, writer io.Writer) {
 
 	err := csvWriter.Write(headers)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// rows
 	for _, xmlPath := range xmlPaths {
-		doc := parseXML(xmlPath)
-		convertOne(doc, mapping, csvWriter)
+		doc, err := parseXML(xmlPath)
+		if err != nil {
+			return err
+		}
+		err = convertOne(doc, mapping, csvWriter)
+		if err != nil {
+			return err
+		}
 	}
 
 	csvWriter.Flush()
+
+	return nil
 }
 
-func convertOne(doc *xmlquery.Node, mapping Mapping, csvWriter *csv.Writer) {
+func convertOne(doc *xmlquery.Node, mapping *Mapping, csvWriter *csv.Writer) error {
 
 	rows, err := xmlquery.QueryAll(doc, mapping.RowsPath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	for _, row := range rows {
 
 		var values []string
 		for _, column := range mapping.Columns {
-			value := getValue(row, column.ValuePath, column.UseEvaluate)
+			value, err := getValue(row, column.ValuePath, column.UseEvaluate)
+			if err != nil {
+				return err
+			}
+
 			values = append(values, value)
 		}
 
 		err := csvWriter.Write(values)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
 }
 
-func getValue(row *xmlquery.Node, valuePath string, useEvaluate bool) string {
+func getValue(row *xmlquery.Node, valuePath string, useEvaluate bool) (string, error) {
 
 	// Node以外を返すような式の場合(count()、boolean()など)
 	if useEvaluate {
 		expr, err := xpath.Compile(valuePath)
 		if err != nil {
-			log.Fatal(err)
+			return "", err
 		}
 
 		value := expr.Evaluate(xmlquery.CreateXPathNavigator(row))
-		return fmt.Sprint(value)
+		return fmt.Sprint(value), nil
 	}
 
 	// Nodeを返す場合
 	value, err := xmlquery.Query(row, valuePath)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if value == nil {
-		return ""
+		return "", nil
 	}
 
-	return value.InnerText()
+	return value.InnerText(), nil
 }
 
-func loadMapping(path string) Mapping {
+func loadMapping(path string) (*Mapping, error) {
 
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	var mapping Mapping
 	err = json.Unmarshal(content, &mapping)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return mapping
+	return &mapping, nil
 }
 
-func parseXML(path string) *xmlquery.Node {
+func parseXML(path string) (*xmlquery.Node, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer file.Close()
 
 	doc, err := xmlquery.Parse(file)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return doc
+	return doc, nil
 }
 
-func findXML(path string) []string {
+func findXML(path string) ([]string, error) {
 
 	fileInfo, err := os.Stat(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if !fileInfo.IsDir() {
 		// ファイル
-		return []string{path}
+		return []string{path}, nil
 	}
 
 	// ディレクトリの場合、配下のファイルを取得
 	fileInfosInDir, err := ioutil.ReadDir(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	var files []string
@@ -212,5 +235,5 @@ func findXML(path string) []string {
 	}
 
 	sort.Strings(files)
-	return files
+	return files, nil
 }

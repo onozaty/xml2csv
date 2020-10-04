@@ -24,7 +24,7 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	convert([]string{"testdata/rss.xml"}, mapping, writer)
+	convert([]string{"testdata/rss.xml"}, &mapping, writer)
 
 	result := string(b.Bytes())
 
@@ -33,7 +33,7 @@ func TestConvert(t *testing.T) {
 		"XML Tutorial,https://www.w3schools.com/xml\n"
 
 	if result != expect {
-		t.Fatalf("failed test\n%s", result)
+		t.Fatal("failed test\n", result)
 	}
 }
 
@@ -55,7 +55,7 @@ func TestConvertOne(t *testing.T) {
 
 	doc, err := xmlquery.Parse(strings.NewReader(xml))
 	if err != nil {
-		panic(err)
+		t.Fatal("failed test\n", err)
 	}
 
 	var b bytes.Buffer
@@ -72,7 +72,7 @@ func TestConvertOne(t *testing.T) {
 		},
 	}
 
-	convertOne(doc, mapping, csv)
+	convertOne(doc, &mapping, csv)
 
 	csv.Flush()
 
@@ -83,15 +83,18 @@ func TestConvertOne(t *testing.T) {
 		"3,name3,,false\n"
 
 	if result != expect {
-		t.Fatalf("failed test\n%s", result)
+		t.Fatal("failed test\n", result)
 	}
 }
 
 func TestLoadMapping(t *testing.T) {
 
-	result := loadMapping("mapping/rss.json")
+	result, err := loadMapping("mapping/rss.json")
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
-	expect := Mapping{
+	expect := &Mapping{
 		RowsPath: "//item",
 		Columns: []Column{
 			Column{Header: "title", ValuePath: "/title"},
@@ -101,13 +104,16 @@ func TestLoadMapping(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expect) {
-		t.Fatalf("failed test\n%+v", result)
+		t.Fatal("failed test\n", result)
 	}
 }
 
 func TestFindXML_Dir(t *testing.T) {
 
-	result := findXML("testdata/junit")
+	result, err := findXML("testdata/junit")
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
 	expect := []string{
 		"testdata\\junit\\TestCase1.xml",
@@ -115,28 +121,34 @@ func TestFindXML_Dir(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expect) {
-		t.Fatalf("failed test\n%s", result)
+		t.Fatal("failed test\n", result)
 	}
 }
 
 func TestFindXML_Dir_Nest(t *testing.T) {
 
-	result := findXML("testdata")
+	result, err := findXML("testdata")
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
 	expect := []string{"testdata\\rss.xml"}
 
 	if !reflect.DeepEqual(result, expect) {
-		t.Fatalf("failed test\n%s", result)
+		t.Fatal("failed test\n", result)
 	}
 }
 
 func TestFindXML_File(t *testing.T) {
 
-	result := findXML("testdata/rss.xml")
+	result, err := findXML("testdata/rss.xml")
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
 	expect := []string{"testdata/rss.xml"}
 
 	if !reflect.DeepEqual(result, expect) {
-		t.Fatalf("failed test\n%s", result)
+		t.Fatal("failed test\n", result)
 	}
 }
