@@ -16,6 +16,11 @@ import (
 	"github.com/antchfx/xpath"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+)
+
 // Column カラムの定義
 type Column struct {
 	Header      string `json:"header"`
@@ -31,16 +36,28 @@ type Mapping struct {
 
 func main() {
 
+	if len(commit) > 7 {
+		commit = commit[:7]
+	}
+	fmt.Printf("xml2csv v%s (%s)\n", version, commit)
+
 	var xmlPath string
 	var mappingPath string
 	var csvPath string
 	var withBom bool
+	var help bool
 
 	flag.StringVar(&xmlPath, "i", "", "XML input file path or directory")
 	flag.StringVar(&mappingPath, "m", "", "XML to CSV mapping file path")
 	flag.StringVar(&csvPath, "o", "", "CSV output file path")
-	flag.BoolVar(&withBom, "bom", false, "CSV with BOM")
+	flag.BoolVar(&withBom, "b", false, "CSV with BOM")
+	flag.BoolVar(&help, "h", false, "Help")
 	flag.Parse()
+
+	if help {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	if xmlPath == "" || mappingPath == "" || csvPath == "" {
 		flag.Usage()
