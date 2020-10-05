@@ -11,7 +11,7 @@ import (
 	"github.com/antchfx/xmlquery"
 )
 
-func TestConvert(t *testing.T) {
+func TestConvert_File(t *testing.T) {
 
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
@@ -24,7 +24,39 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	convert([]string{"testdata/rss.xml"}, &mapping, writer)
+	err := convert([]string{"testdata/rss.xml"}, &mapping, writer)
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	result := string(b.Bytes())
+
+	expect := "title,link\n" +
+		"RSS Tutorial,https://www.w3schools.com/xml/xml_rss.asp\n" +
+		"XML Tutorial,https://www.w3schools.com/xml\n"
+
+	if result != expect {
+		t.Fatal("failed test\n", result)
+	}
+}
+
+func TestConvert_URL(t *testing.T) {
+
+	var b bytes.Buffer
+	writer := bufio.NewWriter(&b)
+
+	mapping := Mapping{
+		RowsPath: "//item",
+		Columns: []Column{
+			Column{Header: "title", ValuePath: "/title"},
+			Column{Header: "link", ValuePath: "/link"},
+		},
+	}
+
+	err := convert([]string{"https://github.com/onozaty/xml2csv/raw/master/testdata/rss.xml"}, &mapping, writer)
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
 	result := string(b.Bytes())
 
@@ -87,9 +119,30 @@ func TestConvertOne(t *testing.T) {
 	}
 }
 
-func TestLoadMapping(t *testing.T) {
+func TestLoadMapping_File(t *testing.T) {
 
 	result, err := loadMapping("mapping/rss.json")
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	expect := &Mapping{
+		RowsPath: "//item",
+		Columns: []Column{
+			Column{Header: "title", ValuePath: "/title"},
+			Column{Header: "link", ValuePath: "/link"},
+			Column{Header: "description", ValuePath: "/description"},
+		},
+	}
+
+	if !reflect.DeepEqual(result, expect) {
+		t.Fatal("failed test\n", result)
+	}
+}
+
+func TestLoadMapping_URL(t *testing.T) {
+
+	result, err := loadMapping("https://github.com/onozaty/xml2csv/raw/master/mapping/rss.json")
 	if err != nil {
 		t.Fatal("failed test\n", err)
 	}

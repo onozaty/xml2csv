@@ -8,9 +8,11 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/antchfx/xmlquery"
 	"github.com/antchfx/xpath"
@@ -47,8 +49,8 @@ func main() {
 	var withBom bool
 	var help bool
 
-	flag.StringVar(&xmlPath, "i", "", "XML input file path or directory")
-	flag.StringVar(&mappingPath, "m", "", "XML to CSV mapping file path")
+	flag.StringVar(&xmlPath, "i", "", "XML input file path or directory or url")
+	flag.StringVar(&mappingPath, "m", "", "XML to CSV mapping file path or url")
 	flag.StringVar(&csvPath, "o", "", "CSV output file path")
 	flag.BoolVar(&withBom, "b", false, "CSV with BOM")
 	flag.BoolVar(&help, "h", false, "Help")
@@ -179,7 +181,13 @@ func getValue(row *xmlquery.Node, valuePath string, useEvaluate bool) (string, e
 
 func loadMapping(path string) (*Mapping, error) {
 
-	content, err := ioutil.ReadFile(path)
+	reader, err := open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	content, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -195,18 +203,13 @@ func loadMapping(path string) (*Mapping, error) {
 
 func parseXML(path string) (*xmlquery.Node, error) {
 
-	file, err := os.Open(path)
+	reader, err := open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer reader.Close()
 
-	doc, err := xmlquery.Parse(file)
-	if err != nil {
-		return nil, err
-	}
-
-	return doc, nil
+	return xmlquery.Parse(reader)
 }
 
 func findXML(path string) ([]string, error) {
@@ -236,4 +239,24 @@ func findXML(path string) ([]string, error) {
 
 	sort.Strings(files)
 	return files, nil
+}
+
+func open(path string) (io.ReadCloser, error) {
+
+	if isURL(path) {
+		// URL
+		resp, err := http.Get(path)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp.Body, nil
+	}
+
+	// ファイル
+	return os.Open(path)
+}
+
+func isURL(path string) bool {
+	return strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://")
 }
