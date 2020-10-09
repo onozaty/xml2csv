@@ -205,3 +205,17 @@ func TestFindXML_File(t *testing.T) {
 		t.Fatal("failed test\n", result)
 	}
 }
+
+func TestFindXML_URL(t *testing.T) {
+
+	result, err := findXML("https://github.com/onozaty/xml2csv/raw/master/testdata/rss.xml")
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	expect := []string{"https://github.com/onozaty/xml2csv/raw/master/testdata/rss.xml"}
+
+	if !reflect.DeepEqual(result, expect) {
+		t.Fatal("failed test\n", result)
+	}
+}

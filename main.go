@@ -214,6 +214,11 @@ func parseXML(path string) (*xmlquery.Node, error) {
 
 func findXML(path string) ([]string, error) {
 
+	if isURL(path) {
+		// URL
+		return []string{path}, nil
+	}
+
 	fileInfo, err := os.Stat(path)
 	if err != nil {
 		return nil, err
