@@ -60,6 +60,11 @@ Specify the position on the XML with XPath.
     * `valuePath` : XPath to get as a value.
     * `useEvaluate` : Specify `true` when using an expression with `valuePath`. For example, when using `sum()` or `not()`, `boolean()`.
 
+[antchfx/xpath](https://github.com/antchfx/xpath) is used in xml2csv.  
+See below for supported XPath.
+
+* https://github.com/antchfx/xpath#supported-features
+
 Please refer to the sample below.
 
 * https://github.com/onozaty/xml2csv/tree/master/mapping
