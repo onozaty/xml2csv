@@ -13,14 +13,11 @@ The arguments are as follows.
 
 ```
 Usage of xml2csv:
-  -b    CSV with BOM
-  -h    Help
-  -i string
-        XML input file path or directory or url
-  -m string
-        XML to CSV mapping file path or url
-  -o string
-        CSV output file path
+  -i, --input string     XML input file path or directory or url
+  -m, --mapping string   XML to CSV mapping file path or url
+  -o, --output string    CSV output file path
+  -b, --bom              CSV with BOM
+  -h, --help             Help
 ```
 
 XML and mapping files can be specified by URL.
