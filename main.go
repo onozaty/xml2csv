@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +15,8 @@ import (
 
 	"github.com/antchfx/xmlquery"
 	"github.com/antchfx/xpath"
+
+	flag "github.com/spf13/pflag"
 )
 
 var (
@@ -49,12 +50,13 @@ func main() {
 	var withBom bool
 	var help bool
 
-	flag.StringVar(&xmlPath, "i", "", "XML input file path or directory or url")
-	flag.StringVar(&mappingPath, "m", "", "XML to CSV mapping file path or url")
-	flag.StringVar(&csvPath, "o", "", "CSV output file path")
-	flag.BoolVar(&withBom, "b", false, "CSV with BOM")
-	flag.BoolVar(&help, "h", false, "Help")
+	flag.StringVarP(&xmlPath, "input", "i", "", "XML input file path or directory or url")
+	flag.StringVarP(&mappingPath, "mapping", "m", "", "XML to CSV mapping file path or url")
+	flag.StringVarP(&csvPath, "output", "o", "", "CSV output file path")
+	flag.BoolVarP(&withBom, "bom", "b", false, "CSV with BOM")
+	flag.BoolVarP(&help, "help", "h", false, "Help")
 	flag.Parse()
+	flag.CommandLine.SortFlags = false
 
 	if help {
 		flag.Usage()
