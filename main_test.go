@@ -19,8 +19,8 @@ func TestConvert_File(t *testing.T) {
 	mapping := Mapping{
 		RowsPath: "//item",
 		Columns: []Column{
-			Column{Header: "title", ValuePath: "/title"},
-			Column{Header: "link", ValuePath: "/link"},
+			{Header: "title", ValuePath: "/title"},
+			{Header: "link", ValuePath: "/link"},
 		},
 	}
 
@@ -48,8 +48,8 @@ func TestConvert_URL(t *testing.T) {
 	mapping := Mapping{
 		RowsPath: "//item",
 		Columns: []Column{
-			Column{Header: "title", ValuePath: "/title"},
-			Column{Header: "link", ValuePath: "/link"},
+			{Header: "title", ValuePath: "/title"},
+			{Header: "link", ValuePath: "/link"},
 		},
 	}
 
@@ -97,10 +97,10 @@ func TestConvertOne(t *testing.T) {
 	mapping := Mapping{
 		RowsPath: "//item",
 		Columns: []Column{
-			Column{Header: "id", ValuePath: "/@id"},
-			Column{Header: "name", ValuePath: "/name"},
-			Column{Header: "value", ValuePath: "/value"},
-			Column{Header: "has value", ValuePath: "boolean(/value)", UseEvaluate: true},
+			{Header: "id", ValuePath: "/@id"},
+			{Header: "name", ValuePath: "/name"},
+			{Header: "value", ValuePath: "/value"},
+			{Header: "has value", ValuePath: "boolean(/value)", UseEvaluate: true},
 		},
 	}
 
@@ -129,9 +129,9 @@ func TestLoadMapping_File(t *testing.T) {
 	expect := &Mapping{
 		RowsPath: "//item",
 		Columns: []Column{
-			Column{Header: "title", ValuePath: "/title"},
-			Column{Header: "link", ValuePath: "/link"},
-			Column{Header: "description", ValuePath: "/description"},
+			{Header: "title", ValuePath: "/title"},
+			{Header: "link", ValuePath: "/link"},
+			{Header: "description", ValuePath: "/description"},
 		},
 	}
 
@@ -150,9 +150,9 @@ func TestLoadMapping_URL(t *testing.T) {
 	expect := &Mapping{
 		RowsPath: "//item",
 		Columns: []Column{
-			Column{Header: "title", ValuePath: "/title"},
-			Column{Header: "link", ValuePath: "/link"},
-			Column{Header: "description", ValuePath: "/description"},
+			{Header: "title", ValuePath: "/title"},
+			{Header: "link", ValuePath: "/link"},
+			{Header: "description", ValuePath: "/description"},
 		},
 	}
 
