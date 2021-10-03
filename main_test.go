@@ -3,12 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/csv"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/antchfx/xmlquery"
+	"github.com/onozaty/go-customcsv"
 )
 
 func TestConvert_File(t *testing.T) {
@@ -29,11 +29,11 @@ func TestConvert_File(t *testing.T) {
 		t.Fatal("failed test\n", err)
 	}
 
-	result := string(b.Bytes())
+	result := b.String()
 
-	expect := "title,link\n" +
-		"RSS Tutorial,https://www.w3schools.com/xml/xml_rss.asp\n" +
-		"XML Tutorial,https://www.w3schools.com/xml\n"
+	expect := "title,link\r\n" +
+		"RSS Tutorial,https://www.w3schools.com/xml/xml_rss.asp\r\n" +
+		"XML Tutorial,https://www.w3schools.com/xml\r\n"
 
 	if result != expect {
 		t.Fatal("failed test\n", result)
@@ -58,11 +58,11 @@ func TestConvert_URL(t *testing.T) {
 		t.Fatal("failed test\n", err)
 	}
 
-	result := string(b.Bytes())
+	result := b.String()
 
-	expect := "title,link\n" +
-		"RSS Tutorial,https://www.w3schools.com/xml/xml_rss.asp\n" +
-		"XML Tutorial,https://www.w3schools.com/xml\n"
+	expect := "title,link\r\n" +
+		"RSS Tutorial,https://www.w3schools.com/xml/xml_rss.asp\r\n" +
+		"XML Tutorial,https://www.w3schools.com/xml\r\n"
 
 	if result != expect {
 		t.Fatal("failed test\n", result)
@@ -92,7 +92,7 @@ func TestConvertOne(t *testing.T) {
 
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
-	csv := csv.NewWriter(writer)
+	csv := customcsv.NewWriter(writer)
 
 	mapping := Mapping{
 		RowsPath: "//item",
@@ -108,11 +108,11 @@ func TestConvertOne(t *testing.T) {
 
 	csv.Flush()
 
-	result := string(b.Bytes())
+	result := b.String()
 
-	expect := "1,name1,value1,true\n" +
-		"2,name2,\"value2,xx\",true\n" +
-		"3,name3,,false\n"
+	expect := "1,name1,value1,true\r\n" +
+		"2,name2,\"value2,xx\",true\r\n" +
+		"3,name3,,false\r\n"
 
 	if result != expect {
 		t.Fatal("failed test\n", result)

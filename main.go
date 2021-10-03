@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/onozaty/go-customcsv"
 
 	"github.com/antchfx/xmlquery"
 	"github.com/antchfx/xpath"
@@ -97,7 +98,7 @@ func main() {
 
 func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
 
-	csvWriter := csv.NewWriter(writer)
+	csvWriter := customcsv.NewWriter(writer)
 
 	// header
 	var headers []string
@@ -127,7 +128,7 @@ func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
 	return nil
 }
 
-func convertOne(doc *xmlquery.Node, mapping *Mapping, csvWriter *csv.Writer) error {
+func convertOne(doc *xmlquery.Node, mapping *Mapping, csvWriter *customcsv.Writer) error {
 
 	rows, err := xmlquery.QueryAll(doc, mapping.RowsPath)
 	if err != nil {
