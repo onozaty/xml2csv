@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -169,8 +170,8 @@ func TestFindXML_Dir(t *testing.T) {
 	}
 
 	expect := []string{
-		"testdata\\junit\\TestCase1.xml",
-		"testdata\\junit\\TestCase2.xml",
+		filepath.Join("testdata", "junit", "TestCase1.xml"),
+		filepath.Join("testdata", "junit", "TestCase2.xml"),
 	}
 
 	if !reflect.DeepEqual(result, expect) {
@@ -185,7 +186,7 @@ func TestFindXML_Dir_Nest(t *testing.T) {
 		t.Fatal("failed test\n", err)
 	}
 
-	expect := []string{"testdata\\rss.xml"}
+	expect := []string{filepath.Join("testdata", "rss.xml")}
 
 	if !reflect.DeepEqual(result, expect) {
 		t.Fatal("failed test\n", result)
