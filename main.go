@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	version = "dev"
-	commit  = "none"
+	Version = "dev"
+	Commit  = "none"
 )
 
 // Column カラムの定義
@@ -40,11 +40,6 @@ type Mapping struct {
 
 func main() {
 
-	if len(commit) > 7 {
-		commit = commit[:7]
-	}
-	fmt.Printf("xml2csv v%s (%s)\n", version, commit)
-
 	var xmlPath string
 	var mappingPath string
 	var csvPath string
@@ -58,6 +53,11 @@ func main() {
 	flag.BoolVarP(&help, "help", "h", false, "Help")
 	flag.Parse()
 	flag.CommandLine.SortFlags = false
+	flag.Usage = func() {
+		fmt.Printf("xml2csv v%s (%s)\n\n", Version, Commit)
+		fmt.Fprint(os.Stderr, "Usage: xml2csv [flags]\n\nFlags\n")
+		flag.PrintDefaults()
+	}
 
 	if help {
 		flag.Usage()
