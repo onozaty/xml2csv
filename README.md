@@ -1,5 +1,8 @@
 # xml2csv
 
+[![GitHub license](https://img.shields.io/github/license/onozaty/xml2csv)](https://github.com/onozaty/xml2csv/blob/main/LICENSE)
+[![Test](https://github.com/onozaty/xml2csv/actions/workflows/test.yaml/badge.svg)](https://github.com/onozaty/xml2csv/actions/workflows/test.yaml)
+
 xml2csv converts XML to CSV.  
 You can easily define mappings for converts using XPath.
 
