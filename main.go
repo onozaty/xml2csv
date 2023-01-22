@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -190,7 +189,7 @@ func loadMapping(path string) (*Mapping, error) {
 	}
 	defer reader.Close()
 
-	content, err := ioutil.ReadAll(reader)
+	content, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +232,7 @@ func findXML(path string) ([]string, error) {
 	}
 
 	// ディレクトリの場合、配下のファイルを取得
-	fileInfosInDir, err := ioutil.ReadDir(path)
+	fileInfosInDir, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
