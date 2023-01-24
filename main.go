@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,7 +36,17 @@ type Mapping struct {
 	Columns  []Column `json:"columns"`
 }
 
+const (
+	OK int = 0
+	NG int = 1
+)
+
 func main() {
+	exitCode := run(os.Args[1:], os.Stdout)
+	os.Exit(exitCode)
+}
+
+func run(arguments []string, output io.Writer) int {
 
 	var xmlPath string
 	var mappingPath string
@@ -46,54 +54,72 @@ func main() {
 	var withBom bool
 	var help bool
 
-	flag.StringVarP(&xmlPath, "input", "i", "", "XML input file path or directory or url")
-	flag.StringVarP(&mappingPath, "mapping", "m", "", "XML to CSV mapping file path or url")
-	flag.StringVarP(&csvPath, "output", "o", "", "CSV output file path")
-	flag.BoolVarP(&withBom, "bom", "b", false, "CSV with BOM")
-	flag.BoolVarP(&help, "help", "h", false, "Help")
-	flag.Parse()
-	flag.CommandLine.SortFlags = false
-	flag.Usage = func() {
-		fmt.Printf("xml2csv v%s (%s)\n\n", Version, Commit)
-		fmt.Fprint(os.Stderr, "Usage: xml2csv [flags]\n\nFlags\n")
-		flag.PrintDefaults()
+	flagSet := flag.NewFlagSet("xml2csv", flag.ContinueOnError)
+
+	flagSet.StringVarP(&xmlPath, "input", "i", "", "XML input file path or directory or url")
+	flagSet.StringVarP(&mappingPath, "mapping", "m", "", "XML to CSV mapping file path or url")
+	flagSet.StringVarP(&csvPath, "output", "o", "", "CSV output file path")
+	flagSet.BoolVarP(&withBom, "bom", "b", false, "CSV with BOM")
+	flagSet.BoolVarP(&help, "help", "h", false, "Help")
+
+	flagSet.SortFlags = false
+	flagSet.Usage = func() {
+		fmt.Fprintf(output, "xml2csv v%s (%s)\n\n", Version, Commit)
+		fmt.Fprint(output, "Usage: xml2csv [flags]\n\nFlags\n")
+		flagSet.PrintDefaults()
+		fmt.Fprintln(output)
+	}
+	flagSet.SetOutput(output)
+
+	if err := flagSet.Parse(arguments); err != nil {
+		flagSet.Usage()
+		fmt.Fprintln(output, err)
+		return NG
 	}
 
 	if help {
-		flag.Usage()
-		os.Exit(0)
+		flagSet.Usage()
+		return OK
 	}
 
 	if xmlPath == "" || mappingPath == "" || csvPath == "" {
-		flag.Usage()
-		os.Exit(1)
+		flagSet.Usage()
+		return NG
 	}
 
 	mapping, err := loadMapping(mappingPath)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(output, err)
+		return NG
 	}
 
 	csvFile, err := os.Create(csvPath)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(output, err)
+		return NG
 	}
 	defer csvFile.Close()
 
 	xmlPaths, err := findXML(xmlPath)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(output, err)
+		return NG
 	}
 
 	if withBom {
 		// BOMを付与
-		csvFile.Write([]byte{0xEF, 0xBB, 0xBF})
+		if _, err := csvFile.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+			fmt.Fprintln(output, err)
+			return NG
+		}
 	}
 
-	err = convert(xmlPaths, mapping, csvFile)
-	if err != nil {
-		log.Fatal(err)
+	if err := convert(xmlPaths, mapping, csvFile); err != nil {
+		fmt.Fprintln(output, err)
+		return NG
 	}
+
+	return OK
 }
 
 func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
@@ -115,7 +141,7 @@ func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
 	for _, xmlPath := range xmlPaths {
 		doc, err := parseXML(xmlPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("%s is failed: %w", xmlPath, err)
 		}
 		err = convertOne(doc, mapping, csvWriter)
 		if err != nil {
@@ -132,7 +158,7 @@ func convertOne(doc *xmlquery.Node, mapping *Mapping, csvWriter *customcsv.Write
 
 	rows, err := xmlquery.QueryAll(doc, mapping.RowsPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("xpath '%s' is failed: %w", mapping.RowsPath, err)
 	}
 
 	for _, row := range rows {
@@ -162,7 +188,7 @@ func getValue(row *xmlquery.Node, valuePath string, useEvaluate bool) (string, e
 	if useEvaluate {
 		expr, err := xpath.Compile(valuePath)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("xpath '%s' is failed: %w", valuePath, err)
 		}
 
 		value := expr.Evaluate(xmlquery.CreateXPathNavigator(row))
@@ -172,7 +198,7 @@ func getValue(row *xmlquery.Node, valuePath string, useEvaluate bool) (string, e
 	// Nodeを返す場合
 	value, err := xmlquery.Query(row, valuePath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("xpath '%s' is failed: %w", valuePath, err)
 	}
 
 	if value == nil {
@@ -190,15 +216,14 @@ func loadMapping(path string) (*Mapping, error) {
 	}
 	defer reader.Close()
 
-	content, err := ioutil.ReadAll(reader)
+	content, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
 
 	var mapping Mapping
-	err = json.Unmarshal(content, &mapping)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &mapping); err != nil {
+		return nil, fmt.Errorf("invalid mapping format: %w", err)
 	}
 
 	return &mapping, nil
@@ -222,6 +247,11 @@ func findXML(path string) ([]string, error) {
 		return []string{path}, nil
 	}
 
+	// URL以外の場合には存在チェック
+	if !exist(path) {
+		return nil, fmt.Errorf("%s is not found", path)
+	}
+
 	fileInfo, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -233,7 +263,7 @@ func findXML(path string) ([]string, error) {
 	}
 
 	// ディレクトリの場合、配下のファイルを取得
-	fileInfosInDir, err := ioutil.ReadDir(path)
+	fileInfosInDir, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
@@ -262,9 +292,18 @@ func open(path string) (io.ReadCloser, error) {
 	}
 
 	// ファイル
+	if !exist(path) {
+		return nil, fmt.Errorf("%s is not found", path)
+	}
+
 	return os.Open(path)
 }
 
 func isURL(path string) bool {
 	return strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://")
+}
+
+func exist(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }
