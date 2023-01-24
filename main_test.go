@@ -492,8 +492,9 @@ func TestRun_OutputFileDirNotFound(t *testing.T) {
 	// ASSERT
 	require.Equal(t, NG, exitCode)
 
-	expect := "open " + outputPath + ": The system cannot find the path specified.\n"
-	assert.Equal(t, expect, out.String())
+	// OSによってエラーメッセージが異なるのでファイル名部分だけチェック
+	expect := "open " + outputPath
+	assert.Contains(t, out.String(), expect)
 }
 
 func TestRun_InvalidXPath_RowPath(t *testing.T) {
