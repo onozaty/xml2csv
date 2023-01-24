@@ -2,6 +2,7 @@
 
 [![GitHub license](https://img.shields.io/github/license/onozaty/xml2csv)](https://github.com/onozaty/xml2csv/blob/main/LICENSE)
 [![Test](https://github.com/onozaty/xml2csv/actions/workflows/test.yaml/badge.svg)](https://github.com/onozaty/xml2csv/actions/workflows/test.yaml)
+[![codecov](https://codecov.io/gh/onozaty/xml2csv/branch/master/graph/badge.svg?token=QSRHZ6IMJF)](https://codecov.io/gh/onozaty/xml2csv)
 
 xml2csv converts XML to CSV.  
 You can easily define mappings for converts using XPath.
@@ -15,7 +16,9 @@ $ xml2csv -i input.xml -m mapping.json -o output.csv
 The arguments are as follows.
 
 ```
-Usage of xml2csv:
+Usage: xml2csv [flags]
+
+Flags
   -i, --input string     XML input file path or directory or url
   -m, --mapping string   XML to CSV mapping file path or url
   -o, --output string    CSV output file path
