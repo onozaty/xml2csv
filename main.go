@@ -139,11 +139,7 @@ func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
 
 	// rows
 	for _, xmlPath := range xmlPaths {
-		doc, err := parseXML(xmlPath)
-		if err != nil {
-			return fmt.Errorf("%s is failed: %w", xmlPath, err)
-		}
-		err = convertOne(doc, mapping, csvWriter)
+		err = convertOne(xmlPath, mapping, csvWriter)
 		if err != nil {
 			return err
 		}
@@ -154,14 +150,27 @@ func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
 	return nil
 }
 
-func convertOne(doc *xmlquery.Node, mapping *Mapping, csvWriter *customcsv.Writer) error {
+func convertOne(xmlPath string, mapping *Mapping, csvWriter *customcsv.Writer) error {
 
-	rows, err := xmlquery.QueryAll(doc, mapping.RowsPath)
+	reader, err := open(xmlPath)
+	if err != nil {
+		return fmt.Errorf("%s is failed: %w", xmlPath, err)
+	}
+	defer reader.Close()
+
+	parser, err := xmlquery.CreateStreamParser(reader, mapping.RowsPath)
 	if err != nil {
 		return fmt.Errorf("xpath '%s' is failed: %w", mapping.RowsPath, err)
 	}
 
-	for _, row := range rows {
+	for {
+		row, err := parser.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("%s is failed: %w", xmlPath, err)
+		}
 
 		var values []string
 		for _, column := range mapping.Columns {
@@ -173,7 +182,7 @@ func convertOne(doc *xmlquery.Node, mapping *Mapping, csvWriter *customcsv.Write
 			values = append(values, value)
 		}
 
-		err := csvWriter.Write(values)
+		err = csvWriter.Write(values)
 		if err != nil {
 			return err
 		}
@@ -227,17 +236,6 @@ func loadMapping(path string) (*Mapping, error) {
 	}
 
 	return &mapping, nil
-}
-
-func parseXML(path string) (*xmlquery.Node, error) {
-
-	reader, err := open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	return xmlquery.Parse(reader)
 }
 
 func findXML(path string) ([]string, error) {

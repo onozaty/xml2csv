@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/onozaty/go-customcsv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -535,7 +534,7 @@ func TestRun_InvalidXPath_RowPath(t *testing.T) {
 	// ASSERT
 	require.Equal(t, NG, exitCode)
 
-	expect := "xpath 'item[' is failed: expression must evaluate to a node-set\n"
+	expect := "xpath 'item[' is failed: invalid streamElementXPath 'item[', err: expression must evaluate to a node-set\n"
 	assert.Equal(t, expect, out.String())
 }
 
@@ -707,7 +706,9 @@ func TestRun_InvalidMappingJson(t *testing.T) {
 func TestConvertOne(t *testing.T) {
 
 	// ARRANGE
-	xml := `<root>
+	temp := t.TempDir()
+
+	inputPath := createFile(t, temp, "test.xml", `<root>
 	<item id="1">
 		<name>name1</name>
 		<value>value1</value>
@@ -719,10 +720,7 @@ func TestConvertOne(t *testing.T) {
 	<item id="3">
 		<name>name3</name>
 	</item>
-	</root>`
-
-	doc, err := xmlquery.Parse(strings.NewReader(xml))
-	require.NoError(t, err)
+	</root>`)
 
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
@@ -739,7 +737,7 @@ func TestConvertOne(t *testing.T) {
 	}
 
 	// ACT
-	err = convertOne(doc, &mapping, csv)
+	err := convertOne(inputPath, &mapping, csv)
 	csv.Flush()
 
 	// ASSERT
