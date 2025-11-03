@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/onozaty/go-customcsv"
@@ -41,6 +42,11 @@ const (
 	NG int = 1
 )
 
+type Format struct {
+	Delimiter rune
+	WithBom   bool
+}
+
 func main() {
 	exitCode := run(os.Args[1:], os.Stdout)
 	os.Exit(exitCode)
@@ -61,8 +67,8 @@ func run(arguments []string, output io.Writer) int {
 	flagSet.StringVarP(&xmlPath, "input", "i", "", "XML input file path or directory or url")
 	flagSet.StringVarP(&mappingPath, "mapping", "m", "", "XML to CSV mapping file path or url")
 	flagSet.StringVarP(&csvPath, "output", "o", "", "CSV output file path")
-	flagSet.StringVarP(&delimiter, "delimiter", "d", ",", "CSV output delimiter (e.g. ';' or '\\t' for tab)")
-	flagSet.BoolVarP(&withBom, "bom", "b", false, "CSV with BOM")
+	flagSet.StringVarP(&delimiter, "delimiter", "d", ",", "(optional) CSV output delimiter (e.g. ';' or '\\t' for tab)")
+	flagSet.BoolVarP(&withBom, "bom", "b", false, "(optional) CSV with BOM")
 	flagSet.BoolVarP(&help, "help", "h", false, "Help")
 
 	flagSet.SortFlags = false
@@ -77,6 +83,12 @@ func run(arguments []string, output io.Writer) int {
 	if err := flagSet.Parse(arguments); err != nil {
 		flagSet.Usage()
 		fmt.Fprintln(output, err)
+		return NG
+	}
+
+	delimiterRune, err := getDelimiterRune(delimiter)
+	if err != nil {
+		fmt.Fprintln(output, "Invalid delimiter specification:", err)
 		return NG
 	}
 
@@ -109,15 +121,7 @@ func run(arguments []string, output io.Writer) int {
 		return NG
 	}
 
-	if withBom {
-		// BOMを付与
-		if _, err := csvFile.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
-			fmt.Fprintln(output, err)
-			return NG
-		}
-	}
-
-	if err := convert(xmlPaths, mapping, csvFile, delimiter); err != nil {
+	if err := convert(xmlPaths, mapping, csvFile, Format{Delimiter: delimiterRune, WithBom: withBom}); err != nil {
 		fmt.Fprintln(output, err)
 		return NG
 	}
@@ -126,24 +130,17 @@ func run(arguments []string, output io.Writer) int {
 }
 
 // convert converts XML files to CSV according to the mapping.
-// The delimiter parameter specifies the output CSV delimiter. If empty, a comma is used.
-func convert(xmlPaths []string, mapping *Mapping, writer io.Writer, delimiter string) error {
+func convert(xmlPaths []string, mapping *Mapping, writer io.Writer, format Format) error {
 
-	csvWriter := customcsv.NewWriter(writer)
-	// set delimiter if specified (default comma)
-	if delimiter != "" {
-		// map known textual representations of tab to tab character
-		switch delimiter {
-		case "\\t", "\t", "tab", "TAB":
-			csvWriter.Delimiter = '\t'
-		default:
-			// use the first rune of the delimiter string
-			runes := []rune(delimiter)
-			if len(runes) > 0 {
-				csvWriter.Delimiter = runes[0]
-			}
+	if format.WithBom {
+		// BOMを付与
+		if _, err := writer.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+			return err
 		}
 	}
+
+	csvWriter := customcsv.NewWriter(writer)
+	csvWriter.Delimiter = format.Delimiter
 
 	// header
 	var headers []string
@@ -323,4 +320,27 @@ func isURL(path string) bool {
 func exist(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
+}
+
+func getDelimiterRune(delimiter string) (rune, error) {
+	unescaped, err := unescapeString(delimiter)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(unescaped) != 1 {
+		return 0, fmt.Errorf("delimiter must be a single character")
+	}
+
+	return []rune(unescaped)[0], nil
+}
+
+func unescapeString(str string) (string, error) {
+
+	if !strings.Contains(str, `\`) {
+		return str, nil
+	}
+
+	// \nのように指定されているものを、スケープ文字として扱えるように
+	return strconv.Unquote(`"` + str + `"`)
 }
