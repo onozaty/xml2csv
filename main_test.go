@@ -220,6 +220,195 @@ func TestRun_WithBom(t *testing.T) {
 	assert.Equal(t, expect, result)
 }
 
+func TestRun_Delimiter_Semicolon(t *testing.T) {
+
+	// ARRANGE
+	temp := t.TempDir()
+
+	inputPath := "testdata/rss.xml"
+
+	mappingPath := createFile(t, temp, "mapping.json", `
+	{
+		"rowsPath": "//item",
+		"columns": [
+			{
+				"header": "title",
+				"valuePath": "/title"
+			},
+			{
+				"header": "link",
+				"valuePath": "/link"
+			}
+		]
+	}`)
+
+	outputPath := filepath.Join(temp, "output.csv")
+	out := new(bytes.Buffer)
+
+	// ACT
+	exitCode := run(
+		[]string{
+			"-i", inputPath,
+			"-m", mappingPath,
+			"-o", outputPath,
+			"-d", ";",
+		},
+		out,
+	)
+
+	// ASSERT
+	require.Equal(t, OK, exitCode)
+	require.Empty(t, out.String())
+
+	result := readString(t, outputPath)
+	expect := joinRows(
+		"title;link",
+		"RSS Tutorial;https://www.w3schools.com/xml/xml_rss.asp",
+		"XML Tutorial;https://www.w3schools.com/xml",
+	)
+
+	assert.Equal(t, expect, result)
+}
+
+func TestRun_Delimiter_Tab(t *testing.T) {
+
+	// ARRANGE
+	temp := t.TempDir()
+
+	inputPath := "testdata/rss.xml"
+
+	mappingPath := createFile(t, temp, "mapping.json", `
+	{
+		"rowsPath": "//item",
+		"columns": [
+			{
+				"header": "title",
+				"valuePath": "/title"
+			},
+			{
+				"header": "link",
+				"valuePath": "/link"
+			}
+		]
+	}`)
+
+	outputPath := filepath.Join(temp, "output.csv")
+	out := new(bytes.Buffer)
+
+	// ACT
+	exitCode := run(
+		[]string{
+			"-i", inputPath,
+			"-m", mappingPath,
+			"-o", outputPath,
+			"-d", "\\t",
+		},
+		out,
+	)
+
+	// ASSERT
+	require.Equal(t, OK, exitCode)
+	require.Empty(t, out.String())
+
+	result := readString(t, outputPath)
+	expect := "title\tlink\r\n" +
+		"RSS Tutorial\thttps://www.w3schools.com/xml/xml_rss.asp\r\n" +
+		"XML Tutorial\thttps://www.w3schools.com/xml\r\n"
+
+	assert.Equal(t, expect, result)
+}
+
+func TestRun_Delimiter_Default(t *testing.T) {
+
+	// ARRANGE
+	temp := t.TempDir()
+
+	inputPath := "testdata/rss.xml"
+
+	mappingPath := createFile(t, temp, "mapping.json", `
+	{
+		"rowsPath": "//item",
+		"columns": [
+			{
+				"header": "title",
+				"valuePath": "/title"
+			},
+			{
+				"header": "link",
+				"valuePath": "/link"
+			}
+		]
+	}`)
+
+	outputPath := filepath.Join(temp, "output.csv")
+	out := new(bytes.Buffer)
+
+	// ACT
+	exitCode := run(
+		[]string{
+			"-i", inputPath,
+			"-m", mappingPath,
+			"-o", outputPath,
+			// -d オプションなし
+		},
+		out,
+	)
+
+	// ASSERT
+	require.Equal(t, OK, exitCode)
+	require.Empty(t, out.String())
+
+	result := readString(t, outputPath)
+	expect := joinRows(
+		"title,link",
+		"RSS Tutorial,https://www.w3schools.com/xml/xml_rss.asp",
+		"XML Tutorial,https://www.w3schools.com/xml",
+	)
+
+	assert.Equal(t, expect, result)
+}
+
+func TestRun_Delimiter_Invalid_MultiChar(t *testing.T) {
+
+	// ARRANGE
+	temp := t.TempDir()
+
+	inputPath := "testdata/rss.xml"
+
+	mappingPath := createFile(t, temp, "mapping.json", `
+	{
+		"rowsPath": "//item",
+		"columns": [
+			{
+				"header": "title",
+				"valuePath": "/title"
+			},
+			{
+				"header": "link",
+				"valuePath": "/link"
+			}
+		]
+	}`)
+
+	outputPath := filepath.Join(temp, "output.csv")
+	out := new(bytes.Buffer)
+
+	// ACT
+	exitCode := run(
+		[]string{
+			"-i", inputPath,
+			"-m", mappingPath,
+			"-o", outputPath,
+			"-d", "ab",
+		},
+		out,
+	)
+
+	// ASSERT
+	require.Equal(t, NG, exitCode)
+	assert.Contains(t, out.String(), "delimiter must be a single character")
+}
+
 func TestRun_CommandParseFailed(t *testing.T) {
 
 	// ARRANGE
@@ -241,11 +430,12 @@ func TestRun_CommandParseFailed(t *testing.T) {
 Usage: xml2csv [flags]
 
 Flags
-  -i, --input string     XML input file path or directory or url
-  -m, --mapping string   XML to CSV mapping file path or url
-  -o, --output string    CSV output file path
-  -b, --bom              CSV with BOM
-  -h, --help             Help
+  -i, --input string       XML input file path or directory or url
+  -m, --mapping string     XML to CSV mapping file path or url
+  -o, --output string      CSV output file path
+  -d, --delimiter string   (optional) CSV output delimiter (e.g. ';' or '\t' for tab) (default ",")
+  -b, --bom                (optional) CSV with BOM
+  -h, --help               Help
 
 unknown shorthand flag: 'a' in -a
 `
@@ -273,11 +463,12 @@ func TestRun_Help(t *testing.T) {
 Usage: xml2csv [flags]
 
 Flags
-  -i, --input string     XML input file path or directory or url
-  -m, --mapping string   XML to CSV mapping file path or url
-  -o, --output string    CSV output file path
-  -b, --bom              CSV with BOM
-  -h, --help             Help
+  -i, --input string       XML input file path or directory or url
+  -m, --mapping string     XML to CSV mapping file path or url
+  -o, --output string      CSV output file path
+  -d, --delimiter string   (optional) CSV output delimiter (e.g. ';' or '\t' for tab) (default ",")
+  -b, --bom                (optional) CSV with BOM
+  -h, --help               Help
 
 `
 	assert.Equal(t, expect, out.String())
@@ -305,11 +496,12 @@ func TestRun_NoneInput(t *testing.T) {
 Usage: xml2csv [flags]
 
 Flags
-  -i, --input string     XML input file path or directory or url
-  -m, --mapping string   XML to CSV mapping file path or url
-  -o, --output string    CSV output file path
-  -b, --bom              CSV with BOM
-  -h, --help             Help
+  -i, --input string       XML input file path or directory or url
+  -m, --mapping string     XML to CSV mapping file path or url
+  -o, --output string      CSV output file path
+  -d, --delimiter string   (optional) CSV output delimiter (e.g. ';' or '\t' for tab) (default ",")
+  -b, --bom                (optional) CSV with BOM
+  -h, --help               Help
 
 `
 	assert.Equal(t, expect, out.String())
@@ -337,11 +529,12 @@ func TestRun_NoneMapping(t *testing.T) {
 Usage: xml2csv [flags]
 
 Flags
-  -i, --input string     XML input file path or directory or url
-  -m, --mapping string   XML to CSV mapping file path or url
-  -o, --output string    CSV output file path
-  -b, --bom              CSV with BOM
-  -h, --help             Help
+  -i, --input string       XML input file path or directory or url
+  -m, --mapping string     XML to CSV mapping file path or url
+  -o, --output string      CSV output file path
+  -d, --delimiter string   (optional) CSV output delimiter (e.g. ';' or '\t' for tab) (default ",")
+  -b, --bom                (optional) CSV with BOM
+  -h, --help               Help
 
 `
 	assert.Equal(t, expect, out.String())
@@ -369,11 +562,12 @@ func TestRun_NoneOutput(t *testing.T) {
 Usage: xml2csv [flags]
 
 Flags
-  -i, --input string     XML input file path or directory or url
-  -m, --mapping string   XML to CSV mapping file path or url
-  -o, --output string    CSV output file path
-  -b, --bom              CSV with BOM
-  -h, --help             Help
+  -i, --input string       XML input file path or directory or url
+  -m, --mapping string     XML to CSV mapping file path or url
+  -o, --output string      CSV output file path
+  -d, --delimiter string   (optional) CSV output delimiter (e.g. ';' or '\t' for tab) (default ",")
+  -b, --bom                (optional) CSV with BOM
+  -h, --help               Help
 
 `
 	assert.Equal(t, expect, out.String())

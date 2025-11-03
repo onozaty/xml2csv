@@ -19,12 +19,29 @@ The arguments are as follows.
 Usage: xml2csv [flags]
 
 Flags
-  -i, --input string     XML input file path or directory or url
-  -m, --mapping string   XML to CSV mapping file path or url
-  -o, --output string    CSV output file path
-  -b, --bom              CSV with BOM
-  -h, --help             Help
+  -i, --input string       XML input file path or directory or url
+  -m, --mapping string     XML to CSV mapping file path or url
+  -o, --output string      CSV output file path
+  -d, --delimiter string   (optional) CSV output delimiter (e.g. ';' or '\t' for tab) (default ",")
+  -b, --bom                (optional) CSV with BOM
+  -h, --help               Help
 ```
+
+### Custom delimiter
+
+Use the `-d` option with `'\t'` to output tab-separated values:
+
+```
+xml2csv -i input.xml -m mapping.json -o output.tsv -d '\t'
+```
+
+For semicolon-separated values:
+
+```
+xml2csv -i input.xml -m mapping.json -o output.csv -d ';'
+```
+
+### Using URL
 
 XML and mapping files can be specified by URL.
 
