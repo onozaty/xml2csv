@@ -22,6 +22,7 @@ Flags
   -i, --input string     XML input file path or directory or url
   -m, --mapping string   XML to CSV mapping file path or url
   -o, --output string    CSV output file path
+  -d, --delimiter string   CSV output delimiter (e.g. ';' or '\t' for tab) (default ",")
   -b, --bom              CSV with BOM
   -h, --help             Help
 ```

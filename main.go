@@ -52,6 +52,8 @@ func run(arguments []string, output io.Writer) int {
 	var mappingPath string
 	var csvPath string
 	var withBom bool
+	// delimiter used for CSV output, default to comma (",")
+	var delimiter string
 	var help bool
 
 	flagSet := flag.NewFlagSet("xml2csv", flag.ContinueOnError)
@@ -59,6 +61,7 @@ func run(arguments []string, output io.Writer) int {
 	flagSet.StringVarP(&xmlPath, "input", "i", "", "XML input file path or directory or url")
 	flagSet.StringVarP(&mappingPath, "mapping", "m", "", "XML to CSV mapping file path or url")
 	flagSet.StringVarP(&csvPath, "output", "o", "", "CSV output file path")
+	flagSet.StringVarP(&delimiter, "delimiter", "d", ",", "CSV output delimiter (e.g. ';' or '\\t' for tab)")
 	flagSet.BoolVarP(&withBom, "bom", "b", false, "CSV with BOM")
 	flagSet.BoolVarP(&help, "help", "h", false, "Help")
 
@@ -114,7 +117,7 @@ func run(arguments []string, output io.Writer) int {
 		}
 	}
 
-	if err := convert(xmlPaths, mapping, csvFile); err != nil {
+	if err := convert(xmlPaths, mapping, csvFile, delimiter); err != nil {
 		fmt.Fprintln(output, err)
 		return NG
 	}
@@ -122,9 +125,25 @@ func run(arguments []string, output io.Writer) int {
 	return OK
 }
 
-func convert(xmlPaths []string, mapping *Mapping, writer io.Writer) error {
+// convert converts XML files to CSV according to the mapping.
+// The delimiter parameter specifies the output CSV delimiter. If empty, a comma is used.
+func convert(xmlPaths []string, mapping *Mapping, writer io.Writer, delimiter string) error {
 
 	csvWriter := customcsv.NewWriter(writer)
+	// set delimiter if specified (default comma)
+	if delimiter != "" {
+		// map known textual representations of tab to tab character
+		switch delimiter {
+		case "\\t", "\t", "tab", "TAB":
+			csvWriter.Delimiter = '\t'
+		default:
+			// use the first rune of the delimiter string
+			runes := []rune(delimiter)
+			if len(runes) > 0 {
+				csvWriter.Delimiter = runes[0]
+			}
+		}
+	}
 
 	// header
 	var headers []string
