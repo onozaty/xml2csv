@@ -1,25 +1,40 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows:
-      - Test
-    types:
-      - completed
+  push:
+    tags:
+    - 'v*'
 
 jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: [1.24.x]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Checkout code
+      uses: actions/checkout@v6
+    - name: Test
+      run: go test -coverprofile="coverage.txt" -covermode=atomic ./...
+
   release:
+    needs: test
     name: Release
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
-        go-version: 1.22
+        go-version: 1.24
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
       with:

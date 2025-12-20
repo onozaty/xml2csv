@@ -2,26 +2,29 @@ name: Test
 
 on:
   push:
-    tags:
-    - 'v*'
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
 
 jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.22.x]
+        go-version: [1.24.x]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Install Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ matrix.go-version }}
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Test
       run: go test -coverprofile="coverage.txt" -covermode=atomic ./...
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}

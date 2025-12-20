@@ -1,8 +1,8 @@
 module github.com/onozaty/xml2csv
 
-go 1.22
+go 1.24
 
-toolchain go1.22.4
+toolchain go1.24.0
 
 require (
 	github.com/antchfx/xmlquery v1.4.0
