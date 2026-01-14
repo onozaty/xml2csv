@@ -37,8 +37,7 @@ changelog:
       - '^test:'
 
 brews:
-  - name: xml2csv
-    repository:
+  - repository:
       owner: onozaty
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
@@ -48,8 +47,7 @@ brews:
     skip_upload: auto
 
 scoops:
-  - name: xml2csv
-    repository:
+  - repository:
       owner: onozaty
       name: scoop-bucket
       token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
