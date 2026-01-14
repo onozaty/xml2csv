@@ -91,9 +91,22 @@ Please refer to the sample below.
 
 ## Install
 
-You can download the binary from the following.
+### Homebrew (macOS/Linux)
 
-* https://github.com/onozaty/xml2csv/releases/latest
+```bash
+brew install onozaty/tap/xml2csv
+```
+
+### Scoop (Windows)
+
+```bash
+scoop bucket add onozaty https://github.com/onozaty/scoop-bucket
+scoop install xml2csv
+```
+
+### Binary Download
+
+Download the latest binary from [GitHub Releases](https://github.com/onozaty/xml2csv/releases/latest).
 
 ## License
 
